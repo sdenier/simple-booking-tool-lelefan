@@ -1,8 +1,7 @@
 <?php
 
-$csv_file = "booked.csv";
-
-$to_email = "creneaux@lelefan.org";
+$csv_file = "booked_test.csv";
+$to_email = "mon-email@foodcoop.org";
 
 $max_3h = "Laisses donc des creneaux pour les autres, c'est 3h max par mois :)";
 $max_5p = "Oups, 5 c'est bien assez, essaie un autre creneau !";
@@ -30,6 +29,7 @@ $messages["succes"] = array();
 $messages["error"] = array();
 $messages["warning"] = array();
 
+//list all shift
 $creneaux = array();
 $creneaux[0] = '6h-7h30';
 $creneaux[1] = '7h30-10h30';
@@ -38,6 +38,7 @@ $creneaux[3] = '13h30-16h30';
 $creneaux[4] = '16h30-19h30';
 $creneaux[5] = '19h30-21h';
 
+//list all days
 $jours = array();
 $jours[0] = 'vendredi 6 octobre';
 $jours[1] = 'Samedi 7 octobre';
@@ -102,6 +103,7 @@ if (isset($_GET['success'])&&$_GET['success']){
 	$messages['success'][] = "Merci, ta demande a bien été prise en compte. <br/>A bientôt dans ton épicerie";
 }
 
+//colors / nb of booking
 $colors = array();
 $colors[0] = 'red';
 $colors[1] = 'amber';
