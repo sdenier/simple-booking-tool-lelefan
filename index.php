@@ -29,7 +29,7 @@ else{
     $cookie_val = 0;
 }
 $messages = array();
-$messages["succes"] = array();
+$messages["success"] = array();
 $messages["error"] = array();
 $messages["warning"] = array();
 
