@@ -22,8 +22,12 @@ function writeCSV($csvFile,$list){
 	fclose($fp);
 }
 
-$cookie_val = floatval($_COOKIE["booked"]);
-
+if( isset($_COOKIE["booked"]) ){
+    $cookie_val = floatval($_COOKIE["booked"]);
+}
+else{
+    $cookie_val = 0;
+}
 $messages = array();
 $messages["succes"] = array();
 $messages["error"] = array();
@@ -159,10 +163,10 @@ $booked = readCSV($csv_file);
 						<?php foreach ($creneaux as $index => $creneau) { ?>
 							<tr>
 								<td class="right-align"><b><?php echo $creneau; ?></b></td>
-								<?php foreach ($jours as $indexj => $jour) { 
+								<?php foreach ($jours as $indexj => $jour) {
 									$nb = $booked[$index][$indexj];
 									?>
-									<td class="creneau <?php echo $colors[$nb]; ?>" 
+									<td class="creneau <?php echo $colors[$nb]; ?>"
 										data-nb="<?php echo $nb; ?>"
 										data-lig="<?php echo $index; ?>"
 										data-col="<?php echo $indexj; ?>"
@@ -178,7 +182,7 @@ $booked = readCSV($csv_file);
 				</div>
 			</div>
 		</div>
-		
+
 
 
 <div id="inscription" class="modal">
@@ -240,7 +244,7 @@ $booked = readCSV($csv_file);
     				}else{
     					Materialize.toast('<?php echo addslashes($max_5p); ?>', 3000, 'rounded');
     				}
-    				
+
     			});
     		});
     	</script>
