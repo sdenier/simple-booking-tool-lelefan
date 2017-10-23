@@ -14,6 +14,48 @@ $max_p = "Oups, ".($MAX_NB_OF_VOLUNTEER-1)." c'est bien assez, essaie un autre c
 
 $cookie_key = "booked_novembre";
 
+
+$cookie_val = floatval($_COOKIE[$cookie_key]);
+
+$messages = array();
+$messages["succes"] = array();
+$messages["error"] = array();
+$messages["warning"] = array();
+
+//list all shift
+$shifts = array();
+$shifts[0] = '6h-7h30';
+$shifts[1] = '7h30-10h30';
+$shifts[2] = '10h30-13h30';
+$shifts[3] = '13h30-16h30';
+$shifts[4] = '16h30-19h30';
+$shifts[5] = '19h30-21h';
+
+//list all days
+$days = array();
+$days[0] = 'Ven 3 nov';
+$days[1] = 'Sam 4 nov';
+$days[2] = 'Ven 10 nov';
+$days[3] = 'Sam 11 nov';
+$days[4] = 'Jeu 16 nov';
+$days[5] = 'Ven 17 nov';
+$days[6] = 'Sam 18 nov';
+$days[7] = 'Jeu 23 nov';
+$days[8] = 'Ven 24 nov';
+$days[9] = 'Sam 25 nov';
+//$days[10] = 'Jeu 30 nov';
+//$days[11] = 'Ven 1 dec';
+//$days[12] = 'Sam 2 dec';
+
+//jeudi
+$blocked = array();
+$blocked[4] = array();
+$blocked[4][0] = true;
+$blocked[4][1] = true;
+$blocked[7] = array();
+$blocked[7][0] = true;
+$blocked[7][1] = true;
+
 function readCSV($csvFile){
     $file_handle = fopen($csvFile, 'r');
     while (!feof($file_handle) ) {
@@ -28,6 +70,19 @@ function writeCSV($csvFile,$list){
 	    fputcsv($fp, $fields);
 	}
 	fclose($fp);
+}
+
+function fixCSV(&$array){
+    global $NB_OF_VOLUNTEER_FIELDS,$HAS_LABEL,$days;
+    $shifted_col = ($HAS_LABEL) ? 1 : 0;
+    $max = count($days)*$NB_OF_VOLUNTEER_FIELDS + $shifted_col;
+    foreach ($array as $index => $line){
+        for ($i=0;$i<$max;$i++){
+            if (!isset($array[$index][$i]))
+                $array[$index][$i] = '';
+        }
+        ksort($array[$index]);
+    }
 }
 
 function singleLevelArray(&$element){
@@ -79,7 +134,7 @@ function getVolunteers($booked,$index,$index_j){
     $shifted_col = ($HAS_LABEL) ? 1 : 0;
     for($i=0;$i<$MAX_NB_OF_VOLUNTEER;$i++){
         if (filter_var($booked[$index*$MAX_NB_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+2+$shifted_col], FILTER_VALIDATE_EMAIL)) {
-            $volunteers[] = strtolower($booked[$index*$MAX_NB_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+$shifted_col]) . ' ' . strtoupper(substr($booked[$index*$MAX_NB_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+1+$shifted_col],0,1));
+            $volunteers[] = strtolower($booked[$index*$MAX_NB_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+$shifted_col]) . '&nbsp;' . strtoupper(substr($booked[$index*$MAX_NB_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+1+$shifted_col],0,1));
         }
     }
     return $volunteers;
@@ -89,55 +144,19 @@ function addVolunteer(&$booked,$index,$index_j,$volunteer){
     $shifted_row = ($HAS_HEADER) ? 1 : 0;
     $shifted_col = ($HAS_LABEL) ? 1 : 0;
     for($i=0;$i<$MAX_NB_OF_VOLUNTEER;$i++){
-        if (!filter_var($booked[$index*$MAX_NB_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+2+$shifted_col], FILTER_VALIDATE_EMAIL)) {
+        if (!filter_var($booked[$index*$MAX_NB_OF_VOLUNTEER+$shifted_row+$i][$index_j*$NB_OF_VOLUNTEER_FIELDS+2+$shifted_col], FILTER_VALIDATE_EMAIL)) {
             $booked[$index*$MAX_NB_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+0+$shifted_col] = $volunteer->getFirstname();
             $booked[$index*$MAX_NB_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+1+$shifted_col] = $volunteer->getLastname();
             $booked[$index*$MAX_NB_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+2+$shifted_col] = $volunteer->getEmail();
             $i = $MAX_NB_OF_VOLUNTEER; //exit
+        }else{
+            $email = $booked[$index*$MAX_NB_OF_VOLUNTEER+$shifted_row+$i][$index_j*$NB_OF_VOLUNTEER_FIELDS+2+$shifted_col];
+            var_dump($email);
         }
     }
 }
 
-$cookie_val = floatval($_COOKIE[$cookie_key]);
 
-$messages = array();
-$messages["succes"] = array();
-$messages["error"] = array();
-$messages["warning"] = array();
-
-//list all shift
-$shifts = array();
-$shifts[0] = '6h-7h30';
-$shifts[1] = '7h30-10h30';
-$shifts[2] = '10h30-13h30';
-$shifts[3] = '13h30-16h30';
-$shifts[4] = '16h30-19h30';
-$shifts[5] = '19h30-21h';
-
-//list all days
-$days = array();
-$days[0] = 'Ven 3 nov';
-$days[1] = 'Sam 4 nov';
-$days[2] = 'Ven 10 nov';
-$days[3] = 'Sam 11 nov';
-$days[4] = 'Jeu 16 nov';
-$days[5] = 'Ven 17 nov';
-$days[6] = 'Sam 18 nov';
-$days[7] = 'Jeu 23 nov';
-$days[8] = 'Sam 24 nov';
-$days[9] = 'Ven 25 nov';
-//$days[10] = 'Jeu 30 nov';
-//$days[11] = 'Ven 1 dec';
-//$days[12] = 'Sam 2 dec';
-
-//jeudi
-$blocked = array();
-$blocked[4] = array();
-$blocked[4][0] = true;
-$blocked[4][1] = true;
-$blocked[7] = array();
-$blocked[7][0] = true;
-$blocked[7][1] = true;
 
 if (!file_exists($csv_file)){ //create empty
     $fp = fopen($csv_file, 'w');
@@ -179,16 +198,18 @@ if ($_POST && isset($_POST["ok"]) && $_POST["ok"]){
 					if (isset($_POST['creneau'])&&isset($_POST['jour'])){
 						$booked = readCSV($csv_file);
 						if (!in_array($_POST["email"],$ressources)){
-                            if ($booked[$_POST['creneau']][$_POST['jour']]<5){
+                            $countV = countVolunteers($booked,$_POST['creneau'],$_POST['jour']);
+                            if ($countV<$MAX_NB_OF_VOLUNTEER){
                                 $volunteer = new Volunteer($_POST["firstname"],$_POST["lastname"],$_POST["email"]);
                                 addVolunteer($booked,$_POST['creneau'],$_POST['jour'],$volunteer);
+                                fixCSV($booked);
                                 writeCSV($csv_file,$booked);
                                 $subject = '[ONLINE FORM] nouveau creneau reservé';
                                 $message = $_POST["lastname"].' '.$_POST["firstname"].' // '.$_POST["email"].' '.$_POST['ok'];
                                 $headers = 'From: creneaux@lelefan.org' . "\r\n" .
                                     'Reply-To: '. $_POST["email"] . "\r\n" .
                                     'X-Mailer: PHP/' . phpversion();
-                                //mail($to_email, $subject, $message, $headers);
+                                mail($to_email, $subject, $message, $headers);
                                 if ($_POST['creneau']==0 || $_POST['creneau']==5)
                                     $cookie_val += 1.5;
                                 else
