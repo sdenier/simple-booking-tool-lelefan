@@ -1,6 +1,7 @@
 <?php
 
-$MAX_NB_OF_VOLUNTEER = 5;
+$NB_MAX_OF_VOLUNTEER = 5;
+$NB_MAX_OF_WORKED_HOURS = 3;
 $NB_OF_VOLUNTEER_FIELDS = 3;
 $HAS_HEADER = true;
 $HAS_LABEL = true;
@@ -9,13 +10,8 @@ $csv_file = "csv/novembre.csv";
 $csv_file_ressources = "csv/ressources.csv";
 $to_email = "creneaux@lelefan.org";
 
-$max_3h = "Laisses donc des creneaux pour les autres, c'est 3h max par mois :)";
-$max_p = "Oups, ".($MAX_NB_OF_VOLUNTEER-1)." c'est bien assez, essaie un autre creneau !";
-
-$cookie_key = "booked_novembre";
-
-
-$cookie_val = floatval($_COOKIE[$cookie_key]);
+$max_h = "Laisses donc des creneaux pour les autres, c'est ".$NB_MAX_OF_WORKED_HOURS."h max par mois :)";
+$max_p = "Oups, ".($NB_MAX_OF_VOLUNTEER-1)." c'est bien assez, essaie un autre creneau !";
 
 $messages = array();
 $messages["succes"] = array();
@@ -46,6 +42,15 @@ $days[9] = 'Sam 25 nov';
 //$days[10] = 'Jeu 30 nov';
 //$days[11] = 'Ven 1 dec';
 //$days[12] = 'Sam 2 dec';
+
+//list all shift
+$shifts_values = array();
+$shifts_values[0] = 1.5;
+$shifts_values[1] = 3;
+$shifts_values[2] = 3;
+$shifts_values[3] = 3;
+$shifts_values[4] = 3;
+$shifts_values[5] = 1.5;
 
 //jeudi
 $blocked = array();
@@ -89,8 +94,14 @@ function singleLevelArray(&$element){
     if (is_array($element) && count($element)==1)
         $element = trim($element[0]);
 }
+        
 $ressources = readCSV($csv_file_ressources);
 array_walk($ressources,'singleLevelArray');
+
+function isRessource($email){
+    global $ressources;
+    return in_array($email,$ressources);
+}
 
 class Volunteer {
     protected $_firstname;
@@ -113,50 +124,85 @@ class Volunteer {
     public function getEmail(){
         return $this->_email;
     }
+    public function __toString()
+    {
+        if (!isRessource($this->getEmail()))
+            return $this->getFirstname() . '&nbsp;' . strtoupper(substr($this->getLastname(),0,1));
+        else
+            return '<i><b>'.$this->getFirstname() . '&nbsp;' . strtoupper(substr($this->getLastname(),0,1)).' (R)</b></i>';
+    }
 }
 
 function countVolunteers($booked,$index,$index_j){
-    global $MAX_NB_OF_VOLUNTEER,$NB_OF_VOLUNTEER_FIELDS,$HAS_HEADER,$HAS_LABEL;
+    global $NB_MAX_OF_VOLUNTEER,$NB_OF_VOLUNTEER_FIELDS,$HAS_HEADER,$HAS_LABEL;
     $nb = 0;
     $shifted_row = ($HAS_HEADER) ? 1 : 0;
     $shifted_col = ($HAS_LABEL) ? 1 : 0;
-    for($i=0;$i<$MAX_NB_OF_VOLUNTEER;$i++){
-        if (filter_var($booked[$index*$MAX_NB_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+2+$shifted_col], FILTER_VALIDATE_EMAIL)) {
+    for($i=0;$i<$NB_MAX_OF_VOLUNTEER;$i++){
+        if (filter_var($booked[$index*$NB_MAX_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+2+$shifted_col], FILTER_VALIDATE_EMAIL)) {
             $nb++;
         }
     }
     return $nb;
 }
+function getScheduledHours($booked,$email){
+    global $days,$shifts,$shifts_values;
+    global $NB_MAX_OF_VOLUNTEER,$NB_OF_VOLUNTEER_FIELDS,$HAS_HEADER,$HAS_LABEL;
+    $nb = 0;
+    $shifted_row = ($HAS_HEADER) ? 1 : 0;
+    $shifted_col = ($HAS_LABEL) ? 1 : 0;
+    foreach ($days as $index_j => $day){
+        foreach ($shifts as $index => $shift) {
+            for ($i = 0; $i < $NB_MAX_OF_VOLUNTEER; $i++) {
+                if (($booked[$index * $NB_MAX_OF_VOLUNTEER + $i + $shifted_row][$index_j * $NB_OF_VOLUNTEER_FIELDS + 2 + $shifted_col]) == $email) {
+                    $nb += $shifts_values[$index];
+                }
+            }
+        }
+    }
+    return $nb;
+}
+
 function getVolunteers($booked,$index,$index_j){
-    global $MAX_NB_OF_VOLUNTEER,$NB_OF_VOLUNTEER_FIELDS,$HAS_HEADER,$HAS_LABEL;
+    global $NB_MAX_OF_VOLUNTEER,$NB_OF_VOLUNTEER_FIELDS,$HAS_HEADER,$HAS_LABEL;
     $volunteers = array();
     $shifted_row = ($HAS_HEADER) ? 1 : 0;
     $shifted_col = ($HAS_LABEL) ? 1 : 0;
-    for($i=0;$i<$MAX_NB_OF_VOLUNTEER;$i++){
-        if (filter_var($booked[$index*$MAX_NB_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+2+$shifted_col], FILTER_VALIDATE_EMAIL)) {
-            $volunteers[] = strtolower($booked[$index*$MAX_NB_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+$shifted_col]) . '&nbsp;' . strtoupper(substr($booked[$index*$MAX_NB_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+1+$shifted_col],0,1));
+    for($i=0;$i<$NB_MAX_OF_VOLUNTEER;$i++){
+        if (filter_var($booked[$index*$NB_MAX_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+2+$shifted_col], FILTER_VALIDATE_EMAIL)) {
+            $volunteers[] = new Volunteer(strtolower($booked[$index*$NB_MAX_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+$shifted_col]),strtolower($booked[$index*$NB_MAX_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+1+$shifted_col]),strtolower($booked[$index*$NB_MAX_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+2+$shifted_col]));
         }
     }
     return $volunteers;
 }
 function addVolunteer(&$booked,$index,$index_j,$volunteer){
-    global $MAX_NB_OF_VOLUNTEER,$NB_OF_VOLUNTEER_FIELDS,$HAS_HEADER,$HAS_LABEL;
+    global $NB_MAX_OF_VOLUNTEER,$NB_OF_VOLUNTEER_FIELDS,$HAS_HEADER,$HAS_LABEL;
     $shifted_row = ($HAS_HEADER) ? 1 : 0;
     $shifted_col = ($HAS_LABEL) ? 1 : 0;
-    for($i=0;$i<$MAX_NB_OF_VOLUNTEER;$i++){
-        if (!filter_var($booked[$index*$MAX_NB_OF_VOLUNTEER+$shifted_row+$i][$index_j*$NB_OF_VOLUNTEER_FIELDS+2+$shifted_col], FILTER_VALIDATE_EMAIL)) {
-            $booked[$index*$MAX_NB_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+0+$shifted_col] = $volunteer->getFirstname();
-            $booked[$index*$MAX_NB_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+1+$shifted_col] = $volunteer->getLastname();
-            $booked[$index*$MAX_NB_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+2+$shifted_col] = $volunteer->getEmail();
-            $i = $MAX_NB_OF_VOLUNTEER; //exit
-        }else{
-            $email = $booked[$index*$MAX_NB_OF_VOLUNTEER+$shifted_row+$i][$index_j*$NB_OF_VOLUNTEER_FIELDS+2+$shifted_col];
-            var_dump($email);
+    for($i=0;$i<$NB_MAX_OF_VOLUNTEER;$i++){
+        if (!filter_var($booked[$index*$NB_MAX_OF_VOLUNTEER+$shifted_row+$i][$index_j*$NB_OF_VOLUNTEER_FIELDS+2+$shifted_col], FILTER_VALIDATE_EMAIL)) {
+            $booked[$index*$NB_MAX_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+0+$shifted_col] = $volunteer->getFirstname();
+            $booked[$index*$NB_MAX_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+1+$shifted_col] = $volunteer->getLastname();
+            $booked[$index*$NB_MAX_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+2+$shifted_col] = $volunteer->getEmail();
+            $i = $NB_MAX_OF_VOLUNTEER; //exit
         }
     }
 }
-
-
+function removeVolunteer(&$booked,$index,$index_j,$email){
+    global $NB_MAX_OF_VOLUNTEER,$NB_OF_VOLUNTEER_FIELDS,$HAS_HEADER,$HAS_LABEL;
+    $shifted_row = ($HAS_HEADER) ? 1 : 0;
+    $shifted_col = ($HAS_LABEL) ? 1 : 0;
+    for($i=0;$i<$NB_MAX_OF_VOLUNTEER;$i++){
+        $current_email = $booked[$index*$NB_MAX_OF_VOLUNTEER+$shifted_row+$i][$index_j*$NB_OF_VOLUNTEER_FIELDS+2+$shifted_col];
+        if ((filter_var($current_email, FILTER_VALIDATE_EMAIL))
+        && ($email == $current_email)){
+            $booked[$index*$NB_MAX_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+0+$shifted_col] = '';
+            $booked[$index*$NB_MAX_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+1+$shifted_col] = '';
+            $booked[$index*$NB_MAX_OF_VOLUNTEER+$i+$shifted_row][$index_j*$NB_OF_VOLUNTEER_FIELDS+2+$shifted_col] = '';
+            $i = $NB_MAX_OF_VOLUNTEER; //exit
+        }
+    }
+}
 
 if (!file_exists($csv_file)){ //create empty
     $fp = fopen($csv_file, 'w');
@@ -175,13 +221,36 @@ if (!file_exists($csv_file)){ //create empty
             for ($i = 0; $i < $NB_OF_VOLUNTEER_FIELDS; $i++)
                 $data[] = '';
         }
-        for ($i =0 ; $i < $MAX_NB_OF_VOLUNTEER; $i++)
+        for ($i =0 ; $i < $NB_MAX_OF_VOLUNTEER; $i++)
             fputcsv($fp, $data);
     }
     fclose($fp);
 }
-
-if ($_POST && isset($_POST["ok"]) && $_POST["ok"]){
+if ($_POST && isset($_POST["remove"]) && $_POST["remove"]) {
+    if (isset($_POST["email"])&&$_POST["email"]){
+        $booked = readCSV($csv_file);
+        if (isset($_POST['creneau'])&&isset($_POST['jour'])){
+            if (!isRessource($_POST["email"])){
+                removeVolunteer($booked,$_POST['creneau'],$_POST['jour'],$_POST["email"]);
+                fixCSV($booked);
+                writeCSV($csv_file,$booked);
+                $subject = '[ONLINE FORM] nouveau creneau supprimé';
+                $message = $_POST["lastname"].' '.$_POST["firstname"].' // '.$_POST["email"].' '.$_POST['remove'];
+                $headers = 'From: creneaux@lelefan.org' . "\r\n" .
+                    'Reply-To: '. $_POST["email"] . "\r\n" .
+                    'X-Mailer: PHP/' . phpversion();
+                mail($to_email, $subject, $message, $headers);
+                //success, redirect same file
+                header('Location: '.$_SERVER['PHP_SELF']."?success=remove");
+                exit;
+            }else{
+                $messages['error'][] = "<i class=\"large material-icons\">warning</i> Tu es bénévole ressource ! Merci d'envoyer un mail à creneaux@lelefan.org pour te désincrire.</a> :)";
+            }
+        }else{
+            $messages['error'][] = "formulaire incomplet";
+        }
+    }
+}elseif ($_POST && isset($_POST["ok"]) && $_POST["ok"]){
 	if (isset($_POST["lastname"])&&$_POST["lastname"]&&isset($_POST["firstname"])&&$_POST["firstname"]){
 		if (isset($_POST["email"])&&$_POST["email"]){
 			if (isset($_POST["raison"])){
@@ -194,12 +263,12 @@ if ($_POST && isset($_POST["ok"]) && $_POST["ok"]){
 				header('Location: '.$_SERVER['PHP_SELF']."?success=true");
 				exit;
 			}else{
-				if (intval($_COOKIE[$cookie_key])<3){
+                $booked = readCSV($csv_file);
+				if (getScheduledHours($booked,$_POST["email"])<$NB_MAX_OF_WORKED_HOURS){
 					if (isset($_POST['creneau'])&&isset($_POST['jour'])){
-						$booked = readCSV($csv_file);
-						if (!in_array($_POST["email"],$ressources)){
+						if (!isRessource($_POST["email"])){
                             $countV = countVolunteers($booked,$_POST['creneau'],$_POST['jour']);
-                            if ($countV<$MAX_NB_OF_VOLUNTEER){
+                            if ($countV<$NB_MAX_OF_VOLUNTEER){
                                 $volunteer = new Volunteer($_POST["firstname"],$_POST["lastname"],$_POST["email"]);
                                 addVolunteer($booked,$_POST['creneau'],$_POST['jour'],$volunteer);
                                 fixCSV($booked);
@@ -210,11 +279,6 @@ if ($_POST && isset($_POST["ok"]) && $_POST["ok"]){
                                     'Reply-To: '. $_POST["email"] . "\r\n" .
                                     'X-Mailer: PHP/' . phpversion();
                                 mail($to_email, $subject, $message, $headers);
-                                if ($_POST['creneau']==0 || $_POST['creneau']==5)
-                                    $cookie_val += 1.5;
-                                else
-                                    $cookie_val += 3;
-                                setcookie($cookie_key,$cookie_val);
                                 //success, redirect same file
                                 header('Location: '.$_SERVER['PHP_SELF']."?success=true");
                                 exit;
@@ -228,7 +292,7 @@ if ($_POST && isset($_POST["ok"]) && $_POST["ok"]){
 					 	$messages['error'][] = "formulaire incomplet";
 					 }
 				}else{
-					$messages['warning'][] = $max_3h;
+					$messages['error'][] = $max_h;
 				}
 			}
 		}else{
@@ -238,8 +302,11 @@ if ($_POST && isset($_POST["ok"]) && $_POST["ok"]){
 		$messages['error'][] = "Merci de bien spécifier ton nom et prénom :)";
 	}
 }
-if (isset($_GET['success'])&&$_GET['success']){
+if (isset($_GET['success'])&&$_GET['success']=='true'){
 	$messages['success'][] = "Merci, ta demande a bien été prise en compte. <br/>A bientôt dans ton épicerie";
+}
+if (isset($_GET['success'])&&$_GET['success']=='remove'){
+	$messages['success'][] = "Merci, la suppression a bien été prise en compte. <br/>Tu peux choisir un autre créneau. <br/>A bientôt dans ton épicerie";
 }
 
 //colors / nb of booking
@@ -316,8 +383,13 @@ $booked = readCSV($csv_file);
                                             data-nb="<?php echo $nb; ?>"
                                             data-lig="<?php echo $index; ?>"
                                             data-col="<?php echo $index_j; ?>"
-                                            data-fr="je m'inscris pour le <?php echo $day; ?> de <?php echo $creneau; ?>">
-                                            <small><?php echo implode('<br>',$volunteers) ?></small>
+                                            data-fr="je m'inscris pour le <?php echo $day; ?> de <?php echo $creneau; ?>"
+                                            data-fr-nok="je me désinscrit du <?php echo $day; ?> de <?php echo $creneau; ?>">
+                                            <small><?php echo implode('<br>',$volunteers) ?>
+<!--                                            --><?php //foreach ($volunteers as $volunteer) : ?>
+<!--                                                    --><?php //echo (string)$volunteer; ?><!--<br/>-->
+<!--                                            --><?php //endforeach; ?>
+                                            </small>
                                         </td>
 								    <?php endif; ?>
 								<?php endforeach; ?>
@@ -327,7 +399,8 @@ $booked = readCSV($csv_file);
 					</table>
 					<br>
 					<br>
-					<a class="btn waves-effect waves-light red modal-trigger" href="#impossible">Oups, je ne peux pas m'inscrire :(</a>
+					<a class="btn waves-effect waves-light deep-purple modal-trigger" href="#impossible"><i class="material-icons left">mood_bad</i>Oups, je ne peux pas m'inscrire</a>
+					<a class="btn waves-effect waves-light red modal-trigger" href="#desinscription"><i class="material-icons left">warning</i>Désinscription</a>
 				</div>
 			</div>
 		</div>
@@ -342,11 +415,29 @@ $booked = readCSV($csv_file);
 			<input type="email" name="email" placeholder="mon@email.fr" />
 			<input type="hidden" name="creneau" />
 			<input type="hidden" name="jour" />
+            <p>Vous ne serez peut-être remplacé par personne. N'abusez pas de cette fonction.</p>
     	</div>
     	<div class="modal-footer">
 			<input type="submit" name="ok" value="M'inscrire" class="btn" />
 		</div>
 	</form>
+</div>
+<div id="remove" class="modal">
+    <form  action="" method="POST">
+        <div class="modal-content">
+            <input type="email" name="email" placeholder="mon@email.fr" />
+            <input type="hidden" name="creneau" />
+            <input type="hidden" name="jour" />
+        </div>
+        <div class="modal-footer">
+            <input type="submit" name="remove" value="M'inscrire" class="btn red" />
+        </div>
+    </form>
+</div>
+<div id="desinscription" class="modal">
+    <div class="modal-content">
+    Double cliquez sur le créneau où vous souhaitez vous désinscrire puis entrez votre email.
+    </div>
 </div>
 <div id="impossible" class="modal">
     <form  action="" method="POST">
@@ -380,12 +471,12 @@ $booked = readCSV($csv_file);
       	<!--Import jQuery before materialize.js-->
       	<script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
   		<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
-  		<?php if ($cookie_val < 3 ){?>
+  		<?php if (true ){?>
     	<script type="text/javascript">
     		jQuery(function(){
     			$('.modal').modal();
     			$("#tab").on("click","tbody td.creneau:not(.blocked)",function(){
-    				if (parseInt($(this).attr("data-nb"))<<?php echo ($MAX_NB_OF_VOLUNTEER-1); ?>){
+    				if (parseInt($(this).attr("data-nb"))<<?php echo ($NB_MAX_OF_VOLUNTEER-1); ?>){
     					$("#inscription").find("input[name=ok]").val($(this).attr("data-fr"));
 	    				$("#inscription").find("input[name=creneau]").val($(this).attr("data-lig"));
 	    				$("#inscription").find("input[name=jour]").val($(this).attr("data-col"));
@@ -395,20 +486,27 @@ $booked = readCSV($csv_file);
     				}
     				
     			});
+                $("#tab").on("contextmenu","tbody td.creneau:not(.blocked)",function(event){
+                    event.preventDefault();
+                    $("#remove").find("input[name=remove]").val($(this).attr("data-fr-nok"));
+                    $("#remove").find("input[name=creneau]").val($(this).attr("data-lig"));
+                    $("#remove").find("input[name=jour]").val($(this).attr("data-col"));
+                    $("#remove").modal('open');
+                });
                 $("#tab").on("click","tbody td.creneau.blocked",function(){
                     Materialize.toast('L&rsquo;épicerie est fermée le jeudi matin :)', 3000, 'rounded');
                 });
     		});
     	</script>
-    	<?php }else{ ?>
+    	<?php /*}else{ ?>
     	<script type="text/javascript">
     		jQuery(function(){
     			$('.modal').modal();
     			$("#tab").on("click","tbody td.creneau",function(){
-    				 Materialize.toast('<?php echo addslashes($max_3h); ?>', 3000, 'rounded');
+    				 Materialize.toast('<?php echo addslashes($max_h); ?>', 3000, 'rounded');
     			});
     		});
     	</script>
-    	<?php } ?>
+    	<?php*/ } ?>
     </body>
   </html>
