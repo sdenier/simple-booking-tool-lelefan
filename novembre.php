@@ -351,7 +351,7 @@ $booked = readCSV($csv_file);
 				    	Gestion du bénévolat
 				    </h2>
 				    <p>
-				    	Clique sur une case pour t'inscrire sur le creneau associé.
+				    	Clique sur une case pour t'inscrire sur le créneau associé.
 				    </p>
 					<table class="bordered" id="tab"><!--responsive-table-->
 						<thead>
@@ -415,7 +415,7 @@ $booked = readCSV($csv_file);
 			<input type="email" name="email" placeholder="mon@email.fr" />
 			<input type="hidden" name="creneau" />
 			<input type="hidden" name="jour" />
-            <p>Vous ne serez peut-être remplacé par personne. N'abusez pas de cette fonction.</p>
+            <p>Tu ne seras peut-être remplacé par personne. N'abuse pas de cette fonction...</p>
     	</div>
     	<div class="modal-footer">
 			<input type="submit" name="ok" value="M'inscrire" class="btn" />
@@ -436,7 +436,12 @@ $booked = readCSV($csv_file);
 </div>
 <div id="desinscription" class="modal">
     <div class="modal-content">
-    Double cliquez sur le créneau où vous souhaitez vous désinscrire puis entrez votre email.
+        <div class="show-touch">
+            Reste appuyé une seconde sur le créneau où tu souhaites te désinscrire puis entre ton courriel.
+        </div>
+        <div class="hide-touch">
+            Clique droit le créneau où tu souhaites te désinscrire puis entre ton courriel.
+        </div>
     </div>
 </div>
 <div id="impossible" class="modal">
@@ -473,8 +478,20 @@ $booked = readCSV($csv_file);
   		<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
   		<?php if (true ){?>
     	<script type="text/javascript">
+            function is_touch_device() {
+                return !!('ontouchstart' in window);
+            }
     		jQuery(function(){
     			$('.modal').modal();
+
+    			if (is_touch_device()){
+    			    $(".show-touch").show();
+    			    $(".hide-touch").hide();
+                }else{
+                    $(".show-touch").hide();
+                    $(".hide-touch").show();
+                }
+
     			$("#tab").on("click","tbody td.creneau:not(.blocked)",function(){
     				if (parseInt($(this).attr("data-nb"))<<?php echo ($NB_MAX_OF_VOLUNTEER-1); ?>){
     					$("#inscription").find("input[name=ok]").val($(this).attr("data-fr"));
