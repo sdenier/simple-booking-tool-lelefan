@@ -112,7 +112,7 @@ class Volunteer {
     {
         $this->_firstname = $firstname;
         $this->_lastname = $lastname;
-        $this->_email = $email;
+        $this->_email = trim($email);
     }
 
     public function getFirstname(){
@@ -415,7 +415,6 @@ $booked = readCSV($csv_file);
 			<input type="email" name="email" placeholder="mon@email.fr" />
 			<input type="hidden" name="creneau" />
 			<input type="hidden" name="jour" />
-            <p>Tu ne seras peut-être remplacé par personne. N'abuse pas de cette fonction...</p>
     	</div>
     	<div class="modal-footer">
 			<input type="submit" name="ok" value="M'inscrire" class="btn" />
@@ -428,6 +427,7 @@ $booked = readCSV($csv_file);
             <input type="email" name="email" placeholder="mon@email.fr" />
             <input type="hidden" name="creneau" />
             <input type="hidden" name="jour" />
+            <p><i>Hum... est-ce que quelqu'un va pouvoir prendre ta place ? ... pas sûr ! <br/> N'abuses pas de cette fonction ...</i></p>
         </div>
         <div class="modal-footer">
             <input type="submit" name="remove" value="M'inscrire" class="btn red" />
@@ -440,7 +440,7 @@ $booked = readCSV($csv_file);
             Reste appuyé une seconde sur le créneau où tu souhaites te désinscrire puis entre ton courriel.
         </div>
         <div class="hide-touch">
-            Clique droit le créneau où tu souhaites te désinscrire puis entre ton courriel.
+            Clique avec le botton droit de la souris sur le créneau où tu souhaites te désinscrire puis entre ton courriel.
         </div>
     </div>
 </div>
