@@ -11,7 +11,7 @@ $csv_file_ressources = "csv/ressources.csv";
 $to_email = "creneaux@lelefan.org";
 
 $max_h = "Laisses donc des creneaux pour les autres, c'est ".$NB_MAX_OF_WORKED_HOURS."h max par mois :)";
-$max_p = "Oups, ".($NB_MAX_OF_VOLUNTEER-1)." c'est bien assez, essaie un autre creneau !";
+$max_p = "Oups, il y bien assez de monde, essaie un autre creneau !";
 
 $messages = array();
 $messages["succes"] = array();
@@ -369,29 +369,37 @@ $booked = readCSV($csv_file);
 							<tr>
 								<td class="right-align"><b><?php echo $creneau; ?></b></td>
 								<?php foreach ($days as $index_j => $day) :
-								    if (isset($blocked[$index_j])&&isset($blocked[$index_j][$index])): ?>
+								    if (isset($blocked[$index_j])&&isset($blocked[$index_j][$index])) { ?>
                                         <td class="creneau blocked"
                                             style="border-left:2px solid <?php echo $boder_color[$index_j%count($boder_color)] ?>;background: lightgray;text-align: center;color: gray;">
                                             Epicerie fermée
                                         </td>
-                                    <?php else :
+                                    <?php } else {
                                         $nb = countVolunteers($booked,$index,$index_j);
                                         $volunteers = getVolunteers($booked,$index,$index_j);
+                                        $r = array();
+                                        $v = array();
+                                        foreach ($volunteers as $volunteer){
+                                            if (isRessource($volunteer->getEmail()))
+                                                $r[] = $volunteer;
+                                            else
+                                                $v[] = $volunteer;
+                                        }
                                         ?>
                                         <td class="creneau <?php echo $colors[$nb]; ?>"
                                             style="border-left:2px solid <?php echo $boder_color[$index_j%count($boder_color)] ?>"
-                                            data-nb="<?php echo $nb; ?>"
+                                            data-nb="<?php echo count($v); ?>"
+                                            data-nb-r="<?php echo count($r); ?>"
                                             data-lig="<?php echo $index; ?>"
                                             data-col="<?php echo $index_j; ?>"
                                             data-fr="je m'inscris pour le <?php echo $day; ?> de <?php echo $creneau; ?>"
                                             data-fr-nok="je me désinscrit du <?php echo $day; ?> de <?php echo $creneau; ?>">
-                                            <small><?php echo implode('<br>',$volunteers) ?>
-<!--                                            --><?php //foreach ($volunteers as $volunteer) : ?>
-<!--                                                    --><?php //echo (string)$volunteer; ?><!--<br/>-->
-<!--                                            --><?php //endforeach; ?>
+                                            <small>
+                                                <?php echo implode('<br>',$r) ?><br>
+                                                <?php echo implode('<br>',$v) ?>
                                             </small>
                                         </td>
-								    <?php endif; ?>
+								    <?php } ?>
 								<?php endforeach; ?>
 							</tr>
 						<?php } ?>
@@ -493,7 +501,7 @@ $booked = readCSV($csv_file);
                 }
 
     			$("#tab").on("click","tbody td.creneau:not(.blocked)",function(){
-    				if (parseInt($(this).attr("data-nb"))<<?php echo ($NB_MAX_OF_VOLUNTEER-1); ?>){
+    				if ((parseInt($(this).attr("data-nb"))+parseInt($(this).attr("data-nb-r")))<<?php echo $NB_MAX_OF_VOLUNTEER; ?>){
     					$("#inscription").find("input[name=ok]").val($(this).attr("data-fr"));
 	    				$("#inscription").find("input[name=creneau]").val($(this).attr("data-lig"));
 	    				$("#inscription").find("input[name=jour]").val($(this).attr("data-col"));
