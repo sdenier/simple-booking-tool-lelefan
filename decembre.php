@@ -32,7 +32,7 @@ $messages["warning"] = array();
 
 $JOB_TYPES = array();
 $JOB_TYPES[0] = "Epicerie";
-$JOB_TYPES[1] = "Bureau des membres";
+$JOB_TYPES[1] = "Accueil - Bureau des membres";
 $NB_OF_JOB_TYPE = count($JOB_TYPES);
 
 //list all shift
@@ -516,7 +516,7 @@ $booked = readCSV($csv_file);
                                                 data-col="<?php echo $index_j; ?>"
                                                 data-job="<?php echo $job; ?>"
                                                 data-fr="je m'inscris pour le <?php echo $day; ?> de <?php echo $shift; ?>"
-                                                data-fr-nok="je me désinscrit du <?php echo $day; ?> de <?php echo $shift; ?>">
+                                                data-fr-nok="je me désinscris du <?php echo $day; ?> de <?php echo $shift; ?>">
                                                 <small>
                                                     <?php echo implode('<br>',$r) ?><br>
                                                     <?php echo implode('<br>',$v) ?>
@@ -539,7 +539,7 @@ $booked = readCSV($csv_file);
 		
 
 
-<div id="inscription" class="modal">
+<div id="inscription" class="modal modal-fixed-footer">
     <form  action="" method="POST">
     	<div class="modal-content">
             <div class="row">
@@ -565,7 +565,7 @@ $booked = readCSV($csv_file);
 		</div>
 	</form>
 </div>
-<div id="remove" class="modal">
+<div id="remove" class="modal modal-fixed-footer">
     <form  action="" method="POST">
         <div class="modal-content">
             <input type="email" name="email" placeholder="mon@email.fr" />
@@ -579,7 +579,7 @@ $booked = readCSV($csv_file);
         </div>
     </form>
 </div>
-<div id="desinscription" class="modal">
+<div id="desinscription" class="modal modal-fixed-footer">
     <div class="modal-content">
         <div class="show-touch">
             Reste appuyé une seconde sur le créneau où tu souhaites te désinscrire puis entre ton courriel.
@@ -589,7 +589,7 @@ $booked = readCSV($csv_file);
         </div>
     </div>
 </div>
-<div id="impossible" class="modal">
+<div id="impossible" class="modal modal-fixed-footer">
     <form  action="" method="POST">
     	<div class="modal-content">
     		<p>
