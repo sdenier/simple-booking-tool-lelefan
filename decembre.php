@@ -285,7 +285,7 @@ function removeVolunteer(&$booked,$job_type,$index,$index_j,$email){
     for($i=0;$i<$NB_MAX_OF_VOLUNTEER[$job_type]&&!$returnValue;$i++){
         $current_email = $booked[$line_index][$column_index+2];
         if ((filter_var($current_email, FILTER_VALIDATE_EMAIL)) //room is not empty and emails matche
-        && ($email == $current_email)){
+        && (strtolower($email) == strtolower($current_email))){
             $booked[$line_index][$column_index+0] = '';
             $booked[$line_index][$column_index+1] = '';
             $booked[$line_index][$column_index+2] = '';
@@ -435,6 +435,15 @@ $booked = readCSV($csv_file);
             .card-panel{
                 color: white;
             }
+            .table-container{
+                overflow-x: scroll;
+                margin-bottom: 20px;
+            }
+            .modal .title{
+                text-align: center;
+                text-transform: uppercase;
+                font-weight: bold;
+            }
         </style>
     </head>
     <body>
@@ -469,14 +478,15 @@ $booked = readCSV($csv_file);
                         Clique sur une case pour t'inscrire sur le créneau associé.
                     </p>
                     <p class="job job0">
-                        Il y a <?php echo $NB_OF_BOOKABLE_ROOM[0]; ?> places résérvables par créneau.
+                        Il y a <?php echo $NB_OF_BOOKABLE_ROOM[0]; ?> places réservables par créneau.
                     </p>
                     <p class="job job1">
-                        Il y a <?php echo $NB_OF_BOOKABLE_ROOM[1]; ?> place résérvable par créneau.
+                        Il y a <?php echo $NB_OF_BOOKABLE_ROOM[1]; ?> place réservable par créneau.
                     </p>
                     <?php for ($job=0;$job<$NB_OF_JOB_TYPE;$job++) : ?>
-                        <table class="bordered job job<?php echo $job ?>">
-                            <thead>
+                        <div class="col s12 table-container job job<?php echo $job ?>">
+                            <table class="bordered">
+                                <thead>
                                 <tr>
                                     <td>
                                     </td>
@@ -485,51 +495,50 @@ $booked = readCSV($csv_file);
                                             style="border-left:2px solid <?php echo $BORDER_COLOR[$index_j%count($BORDER_COLOR)] ?>" width="<?php echo intval(100/count($DAYS))?>%"><?php echo $day; ?></td>
                                     <?php } ?>
                                 </tr>
-                            </thead>
-                            <tbody>
-                            <?php foreach ($SHIFTS[$job] as $index => $shift) { ?>
-                                <tr>
-                                    <td class="right-align"><b><?php echo $shift; ?></b></td>
-                                    <?php foreach ($DAYS as $index_j => $day) :
-                                        if (isset($BLOCKED[$job][$index_j])&&isset($BLOCKED[$job][$index_j][$index])) { ?>
-                                            <td class="creneau blocked"
-                                                style="border-left:2px solid <?php echo $BORDER_COLOR[$index_j%count($BORDER_COLOR)] ?>;background: lightgray;text-align: center;color: gray;">
-                                                Epicerie fermée
-                                            </td>
-                                        <?php } else {
-                                            $nb = countVolunteers($booked,$job,$index,$index_j);
-                                            $volunteers = getVolunteers($booked,$job,$index,$index_j);
-                                            $r = array();
-                                            $v = array();
-                                            foreach ($volunteers as $volunteer){
-                                                if (isRessource($volunteer->getEmail()))
-                                                    $r[] = $volunteer;
-                                                else
-                                                    $v[] = $volunteer;
-                                            }
-                                            ?>
-                                            <td class="creneau <?php echo $COLORS[$job][$nb]; ?>"
-                                                style="border-left:2px solid <?php echo $BORDER_COLOR[$index_j%count($BORDER_COLOR)] ?>"
-                                                data-nb="<?php echo count($v); ?>"
-                                                data-nb-r="<?php echo count($r); ?>"
-                                                data-lig="<?php echo $index; ?>"
-                                                data-col="<?php echo $index_j; ?>"
-                                                data-job="<?php echo $job; ?>"
-                                                data-fr="je m'inscris pour le <?php echo $day; ?> de <?php echo $shift; ?>"
-                                                data-fr-nok="je me désinscris du <?php echo $day; ?> de <?php echo $shift; ?>">
-                                                <small>
-                                                    <?php echo implode('<br>',$r) ?><br>
-                                                    <?php echo implode('<br>',$v) ?>
-                                                </small>
-                                            </td>
-                                        <?php } ?>
-                                    <?php endforeach; ?>
-                                </tr>
-                            <?php } ?>
-                            </tbody>
-                        </table>
-                        <br>
-                        <br>
+                                </thead>
+                                <tbody>
+                                <?php foreach ($SHIFTS[$job] as $index => $shift) { ?>
+                                    <tr>
+                                        <td class="right-align"><b><?php echo $shift; ?></b></td>
+                                        <?php foreach ($DAYS as $index_j => $day) :
+                                            if (isset($BLOCKED[$job][$index_j])&&isset($BLOCKED[$job][$index_j][$index])) { ?>
+                                                <td class="creneau blocked"
+                                                    style="border-left:2px solid <?php echo $BORDER_COLOR[$index_j%count($BORDER_COLOR)] ?>;background: lightgray;text-align: center;color: gray;">
+                                                    Epicerie fermée
+                                                </td>
+                                            <?php } else {
+                                                $nb = countVolunteers($booked,$job,$index,$index_j);
+                                                $volunteers = getVolunteers($booked,$job,$index,$index_j);
+                                                $r = array();
+                                                $v = array();
+                                                foreach ($volunteers as $volunteer){
+                                                    if (isRessource($volunteer->getEmail()))
+                                                        $r[] = $volunteer;
+                                                    else
+                                                        $v[] = $volunteer;
+                                                }
+                                                ?>
+                                                <td class="creneau <?php echo $COLORS[$job][$nb]; ?>"
+                                                    style="border-left:2px solid <?php echo $BORDER_COLOR[$index_j%count($BORDER_COLOR)] ?>"
+                                                    data-nb="<?php echo count($v); ?>"
+                                                    data-nb-r="<?php echo count($r); ?>"
+                                                    data-lig="<?php echo $index; ?>"
+                                                    data-col="<?php echo $index_j; ?>"
+                                                    data-job="<?php echo $job; ?>"
+                                                    data-fr="je m'inscris pour le <?php echo $day; ?> de <?php echo $shift; ?>"
+                                                    data-fr-nok="je me désinscris du <?php echo $day; ?> de <?php echo $shift; ?>">
+                                                    <small>
+                                                        <?php echo implode('<br>',$r) ?><br>
+                                                        <?php echo implode('<br>',$v) ?>
+                                                    </small>
+                                                </td>
+                                            <?php } ?>
+                                        <?php endforeach; ?>
+                                    </tr>
+                                <?php } ?>
+                                </tbody>
+                            </table>
+                        </div>
                     <?php endfor; ?>
 					<a class="btn waves-effect waves-light deep-purple modal-trigger" href="#impossible"><i class="material-icons left">mood_bad</i>Oups, je ne peux pas m'inscrire</a>
 					<a class="btn waves-effect waves-light red modal-trigger" href="#desinscription"><i class="material-icons left">warning</i>Désinscription</a>
@@ -539,15 +548,16 @@ $booked = readCSV($csv_file);
 		
 
 
-<div id="inscription" class="modal modal-fixed-footer">
+<div id="inscription" class="modal">
     <form  action="" method="POST">
     	<div class="modal-content">
+            <div class="title"></div>
             <div class="row">
-                <div class="input-field col s12">
+                <div class="input-field col s6 m12">
                     <input id="firstname" type="text" name="firstname" class="validate">
                     <label for="firstname">Ton prénom</label>
                 </div>
-                <div class="input-field col s12">
+                <div class="input-field col s6 m12">
                     <input id="lastname" type="text" name="lastname" class="validate">
                     <label for="lastname">Ton nom</label>
                 </div>
@@ -556,30 +566,34 @@ $booked = readCSV($csv_file);
                     <label for="email" data-error="Mauvais format" data-success="">Ton courriel</label>
                 </div>
             </div>
+            <button type="submit" class="btn ok show-on-small">Je m'inscris</button>
 			<input type="hidden" name="creneau" />
 			<input type="hidden" name="jour" />
 			<input type="hidden" name="job_type" />
+			<input type="hidden" name="ok" />
     	</div>
     	<div class="modal-footer">
-			<input type="submit" name="ok" value="M'inscrire" class="btn" />
+            <button type="submit" class="btn ok hide-on-small-only">Je m'inscris</button>
 		</div>
 	</form>
 </div>
-<div id="remove" class="modal modal-fixed-footer">
+<div id="remove" class="modal">
     <form  action="" method="POST">
         <div class="modal-content">
+            <div class="title"></div>
             <input type="email" name="email" placeholder="mon@email.fr" />
             <input type="hidden" name="creneau" />
             <input type="hidden" name="jour" />
             <input type="hidden" name="job_type" />
+            <input type="hidden" name="remove" />
             <p><i>Hum... est-ce que quelqu'un va pouvoir prendre ta place ? ... pas sûr ! <br/> N'abuses pas de cette fonction ...</i></p>
         </div>
         <div class="modal-footer">
-            <input type="submit" name="remove" value="M'inscrire" class="btn red" />
+            <button type="submit" class="remove btn red">Je me désinscris</button>
         </div>
     </form>
 </div>
-<div id="desinscription" class="modal modal-fixed-footer">
+<div id="desinscription" class="modal">
     <div class="modal-content">
         <div class="show-touch">
             Reste appuyé une seconde sur le créneau où tu souhaites te désinscrire puis entre ton courriel.
@@ -589,7 +603,7 @@ $booked = readCSV($csv_file);
         </div>
     </div>
 </div>
-<div id="impossible" class="modal modal-fixed-footer">
+<div id="impossible" class="modal">
     <form  action="" method="POST">
     	<div class="modal-content">
     		<p>
@@ -630,14 +644,15 @@ $booked = readCSV($csv_file);
                 $('select').material_select();
             });
     		jQuery(function(){
-    			$('.modal').modal();
-
     			if (is_touch_device()){
     			    $(".show-touch").show();
     			    $(".hide-touch").hide();
+    			    $(".modal").addClass("bottom-sheet").modal();
+    			    console.log("touch_device detected");
                 }else{
                     $(".show-touch").hide();
                     $(".hide-touch").show();
+                    $('.modal').modal();
                 }
 
                 $("#job_type").change(function () {
@@ -647,8 +662,9 @@ $booked = readCSV($csv_file);
 
                 var max_nb_of_volunteer = <?php echo json_encode($NB_OF_BOOKABLE_ROOM); ?>;
 
-    			$("table.job").on("click","tbody td.creneau:not(.blocked)",function(){
+    			$(".job").on("click","tbody td.creneau:not(.blocked)",function(){
     				if ((parseInt($(this).attr("data-nb"))+parseInt($(this).attr("data-nb-r")))<max_nb_of_volunteer[$(this).attr("data-job")]){
+    					$("#inscription").find(".title").html($(this).attr("data-fr"));
     					$("#inscription").find("input[name=ok]").val($(this).attr("data-fr"));
 	    				$("#inscription").find("input[name=creneau]").val($(this).attr("data-lig"));
 	    				$("#inscription").find("input[name=jour]").val($(this).attr("data-col"));
@@ -659,15 +675,16 @@ $booked = readCSV($csv_file);
     				}
     				
     			});
-                $("table.job").on("contextmenu","tbody td.creneau:not(.blocked)",function(event){
+                $(".job").on("contextmenu","tbody td.creneau:not(.blocked)",function(event){
                     event.preventDefault();
+                    $("#remove").find(".title").html($(this).attr("data-fr-nok"));
                     $("#remove").find("input[name=remove]").val($(this).attr("data-fr-nok"));
                     $("#remove").find("input[name=creneau]").val($(this).attr("data-lig"));
                     $("#remove").find("input[name=jour]").val($(this).attr("data-col"));
                     $("#remove").find("input[name=job_type]").val($(this).attr("data-job"));
                     $("#remove").modal('open');
                 });
-                $("table.job").on("click","tbody td.creneau.blocked",function(){
+                $(".job").on("click","tbody td.creneau.blocked",function(){
                     Materialize.toast('L&rsquo;épicerie est fermée le jeudi matin :)', 3000, 'rounded');
                 });
     		});
