@@ -188,9 +188,9 @@ class Volunteer {
     public function __toString()
     {
         if (!isRessource($this->getEmail()))
-            return $this->getFirstname() . '&nbsp;' . strtoupper(substr($this->getLastname(),0,1));
+            return ucfirst($this->getFirstname()) . '&nbsp;' . strtoupper(substr($this->getLastname(),0,1));
         else
-            return '<i><b>'.$this->getFirstname() . '&nbsp;' . strtoupper(substr($this->getLastname(),0,1)).' (R)</b></i>';
+            return '<i><b>'.ucfirst($this->getFirstname()) . '&nbsp;' . strtoupper(substr($this->getLastname(),0,1)).' (R)</b></i>';
     }
 }
 
